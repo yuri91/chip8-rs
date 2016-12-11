@@ -249,19 +249,40 @@ instruction_set! {
     RAND    => 0xC, x , n1, n2 | {
         cpu.v[x as usize] = nn(n1,n2) & rand::random::<u8>();
     },
-    DRAW    => 0xD, _ , _ , _  | {},
+    DRAW    => 0xD, x , y , n  | {},
     SKIPK   => 0xE, x ,0xE,0x9 | {},
     SKIPNK  => 0xE, x ,0xA,0x1 | {},
-    MOVED   => 0xF, _ ,0x0,0x7 | {},
-    KEYD    => 0xF, _ ,0x0,0xA | {},
-    LOADD   => 0xF, _ ,0x1,0x5 | {},
-    LOADS   => 0xF, _ ,0x1,0x8 | {},
-    ADDI    => 0xF, _ ,0x1,0xE | {},
+    MOVED   => 0xF, x ,0x0,0x7 | {
+        cpu.v[x as usize] = cpu.dt;
+    },
+    KEYD    => 0xF, x ,0x0,0xA | {
+        match cpu.key_status {
+            KeyStatus::None => {cpu.key_status = KeyStatus::Waiting(x);}
+            KeyStatus::Waiting(_) => { cpu.pc -= 2;}
+        }
+    },
+    LOADD   => 0xF, x ,0x1,0x5 | {
+        cpu.dt = cpu.v[x as usize];
+    },
+    LOADS   => 0xF, x ,0x1,0x8 | {
+        cpu.st = cpu.v[x as usize];
+    },
+    ADDI    => 0xF, x ,0x1,0xE | {
+         cpu.i += cpu.v[x as usize] as u16;
+    },
     LDSPR   => 0xF, _ ,0x2,0x9 | {},
     BCD     => 0xF, _ ,0x3,0x3 | {},
-    STOR    => 0xF, _ ,0x5,0x5 | {},
-    READ    => 0xF, _ ,0x6,0x5 | {},
-    UNKNOWN =>  _ , _ , _ , _  | {}
+    STOR    => 0xF, x ,0x5,0x5 | {
+        for r in 0..x {
+            cpu.ram[(cpu.i as usize)+(r as usize)] = cpu.v[r as usize];
+        }
+    },
+    READ    => 0xF, x ,0x6,0x5 | {
+        for r in 0..x {
+            cpu.v[r as usize] = cpu.ram[(cpu.i as usize)+(r as usize)];
+        }
+    },
+    UNKNOWN =>  _ , _ , _ , _  | { panic!("unknown instruction, exiting"); }
 }
 
 
