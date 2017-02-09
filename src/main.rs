@@ -14,7 +14,8 @@ use std::collections::HashMap;
 
 struct SDLFrontend {
     sdl_context: Sdl,
-    renderer: Renderer<'static>
+    renderer: Renderer<'static>,
+    keymap: HashMap<String,usize>
 }
 
 impl SDLFrontend {
@@ -28,9 +29,28 @@ impl SDLFrontend {
             .build()
             .unwrap();
 
+        let mut keymap = HashMap::new();
+        keymap.insert("1".to_string(),0x1usize);
+        keymap.insert("2".to_string(),0x2usize);
+        keymap.insert("3".to_string(),0x3usize);
+        keymap.insert("4".to_string(),0xCusize);
+        keymap.insert("Q".to_string(),0x4usize);
+        keymap.insert("W".to_string(),0x5usize);
+        keymap.insert("E".to_string(),0x6usize);
+        keymap.insert("R".to_string(),0xDusize);
+        keymap.insert("A".to_string(),0x7usize);
+        keymap.insert("S".to_string(),0x8usize);
+        keymap.insert("D".to_string(),0x9usize);
+        keymap.insert("F".to_string(),0xEusize);
+        keymap.insert("Z".to_string(),0xAusize);
+        keymap.insert("X".to_string(),0x0usize);
+        keymap.insert("C".to_string(),0xBusize);
+        keymap.insert("V".to_string(),0xFusize);
+
         SDLFrontend {
             sdl_context: sdl_context,
             renderer: window.renderer().build().unwrap(),
+            keymap: keymap
         }
     }
 }
@@ -59,24 +79,6 @@ impl Display for SDLFrontend {
 impl Keyboard for SDLFrontend {
     fn update_keys(&mut self, keys: &mut[bool]) -> bool {
         
-        let mut keymap = HashMap::new();
-        keymap.insert("1".to_string(),0x1usize);
-        keymap.insert("2".to_string(),0x2usize);
-        keymap.insert("3".to_string(),0x3usize);
-        keymap.insert("4".to_string(),0xCusize);
-        keymap.insert("q".to_string(),0x4usize);
-        keymap.insert("w".to_string(),0x5usize);
-        keymap.insert("e".to_string(),0x6usize);
-        keymap.insert("r".to_string(),0xDusize);
-        keymap.insert("a".to_string(),0x7usize);
-        keymap.insert("s".to_string(),0x8usize);
-        keymap.insert("d".to_string(),0x9usize);
-        keymap.insert("f".to_string(),0xEusize);
-        keymap.insert("z".to_string(),0xAusize);
-        keymap.insert("x".to_string(),0x0usize);
-        keymap.insert("c".to_string(),0xBusize);
-        keymap.insert("v".to_string(),0xFusize);
-
         let mut event_pump = self.sdl_context.event_pump().unwrap();
         for event in event_pump.poll_iter() {
             match event {
@@ -84,12 +86,12 @@ impl Keyboard for SDLFrontend {
                     return false;
                 },
                 Event::KeyDown { keycode: Some(k), .. } => {
-                    if let Some(p) = keymap.get(&k.name()) {
+                    if let Some(p) = self.keymap.get(&k.name()) {
                         keys[*p] = true;
                     }
                 },
                 Event::KeyUp { keycode: Some(k), .. } => {
-                    if let Some(p) = keymap.get(&k.name()) {
+                    if let Some(p) = self.keymap.get(&k.name()) {
                         keys[*p] = false;
                     }
                 },
