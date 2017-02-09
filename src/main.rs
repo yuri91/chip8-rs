@@ -94,6 +94,8 @@ impl SDLFrontend {
                 Event::KeyDown { keycode: Some(k), .. } => {
                     if let Some(p) = self.keymap.get(&k.name()) {
                         self.chip8.keys_pressed()[*p] = true;
+                    } else if k == Keycode::Return {
+                        self.chip8.soft_reset();
                     }
                 },
                 Event::KeyUp { keycode: Some(k), .. } => {
