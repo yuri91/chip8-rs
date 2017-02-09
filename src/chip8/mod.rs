@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::{self,Read};
 
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration,SystemTime};
 
 pub trait Keyboard {
     fn update_keys(&mut self, keys: &mut[bool]) -> bool;
@@ -36,22 +36,28 @@ impl <Frontend:Display+Keyboard> Chip8<Frontend> {
     }
     pub fn run(&mut self) {
         let mut running = true;
-        let mut tick = 0u32;
+        let now = SystemTime::now();
+        let mut last_cpu = now.elapsed().unwrap();
+        let mut last_timer = last_cpu;
+        let inst_per_frame = 12;
+        let cpu_time = Duration::new(0,1_000_000_000/(60*inst_per_frame));
+        let timer_time = Duration::new(0,1_000_000_000/60);
         while running {
-            running = self.frontend.update_keys(self.cpu.keys_pressed());
-
-            self.frontend.update_screen(self.cpu.video_ram());
-            self.cpu.fetch();
-            self.cpu.exec();
-            tick = tick.wrapping_add(1);
-            if tick%9 == 0 {
-                self.cpu.tick();
+            let elapsed = now.elapsed().unwrap();
+            let diff_cpu = elapsed - last_cpu;
+            if (diff_cpu >= cpu_time) {
+                self.cpu.fetch();
+                self.cpu.exec();
+                last_cpu = elapsed;
             }
-            //let duration = Duration::new(0,1000_000_000/540);
-            //sleep(duration);
-            println!("{}",&self.cpu);
-            let mut l = String::new();
-            std::io::stdin().read_line(&mut l);
+            let diff_timer = elapsed - last_timer;
+            if (diff_timer >= timer_time) {
+                running = self.frontend.update_keys(self.cpu.keys_pressed());
+                self.frontend.update_screen(self.cpu.video_ram());
+
+                self.cpu.tick();
+                last_timer = elapsed;
+            }
         }
     }
 }
