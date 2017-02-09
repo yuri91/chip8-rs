@@ -8,18 +8,24 @@ use sdl2::Sdl;
 use sdl2::render::Renderer;
 
 mod chip8;
-use chip8::{Chip8,Display,Keyboard};
+
+use std::fs;
+use std::io::Read;
+
+use std::thread;
+use std::time;
 
 use std::collections::HashMap;
 
 struct SDLFrontend {
+    chip8: chip8::Cpu,
     sdl_context: Sdl,
     renderer: Renderer<'static>,
     keymap: HashMap<String,usize>
 }
 
 impl SDLFrontend {
-    fn init() -> SDLFrontend {
+    pub fn init() -> SDLFrontend {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
 
@@ -48,15 +54,19 @@ impl SDLFrontend {
         keymap.insert("V".to_string(),0xFusize);
 
         SDLFrontend {
+            chip8: chip8::Cpu::new(),
             sdl_context: sdl_context,
             renderer: window.renderer().build().unwrap(),
             keymap: keymap
         }
     }
-}
-
-impl Display for SDLFrontend {
-    fn update_screen(&mut self, screen: &[bool]) {
+    pub fn load_program(&mut self, path: &str) {
+        let mut f = fs::File::open(path).expect("file does not exists");
+        let mut program = Vec::new();
+        f.read_to_end(&mut program).expect("cannot read file");
+        self.chip8.load(program.as_slice());
+    }
+    fn update_screen(&mut self) {
 
         let w = 64usize;
         let h = 32usize;
@@ -67,18 +77,14 @@ impl Display for SDLFrontend {
         self.renderer.set_draw_color(Color::RGB(0, 0, 0));
         for j in 0..h {
             for i in 0..w {
-                if screen[i+64*j] {
-                    self.renderer.fill_rect(Rect::new((i*scale) as i32,(j*scale) as i32,scale as u32,scale as u32));
+                if self.chip8.video_ram()[i+64*j] {
+                    self.renderer.fill_rect(Rect::new((i*scale) as i32,(j*scale) as i32,scale as u32,scale as u32)).unwrap();
                 }
             }
         }
         self.renderer.present();
     }
-}
-
-impl Keyboard for SDLFrontend {
-    fn update_keys(&mut self, keys: &mut[bool]) -> bool {
-        
+    fn update_keys(&mut self) -> bool {
         let mut event_pump = self.sdl_context.event_pump().unwrap();
         for event in event_pump.poll_iter() {
             match event {
@@ -87,12 +93,12 @@ impl Keyboard for SDLFrontend {
                 },
                 Event::KeyDown { keycode: Some(k), .. } => {
                     if let Some(p) = self.keymap.get(&k.name()) {
-                        keys[*p] = true;
+                        self.chip8.keys_pressed()[*p] = true;
                     }
                 },
                 Event::KeyUp { keycode: Some(k), .. } => {
                     if let Some(p) = self.keymap.get(&k.name()) {
-                        keys[*p] = false;
+                        self.chip8.keys_pressed()[*p] = false;
                     }
                 },
                 _ => {}
@@ -100,16 +106,33 @@ impl Keyboard for SDLFrontend {
         }
         return true;
     }
+
+    pub fn run(&mut self) {
+        let mut running = true;
+        let inst_per_frame = 20;
+        let dur = time::Duration::new(0,1_000_000_000/60);
+        let clock = time::SystemTime::now();
+        while running {
+            let start = clock.elapsed().unwrap();
+            self.chip8.run(inst_per_frame);
+            running = self.update_keys();
+            self.update_screen();
+            self.chip8.tick();
+            let elapsed = clock.elapsed().unwrap() - start;
+
+            if elapsed < dur {
+                thread::sleep(dur-elapsed);
+            }
+        }
+    }
 }
 
 fn main() {
     let path = std::env::args().nth(1).expect("must provide a ROM file!");
 
-    let sdl_frontend = SDLFrontend::init();
+    let mut sdl_frontend = SDLFrontend::init();
 
-    let mut chip8 = Chip8::new(sdl_frontend);
-
-    chip8.load_program(&path);
-    chip8.run();
+    sdl_frontend.load_program(&path);
+    sdl_frontend.run();
 
 }
