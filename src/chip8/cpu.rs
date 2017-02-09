@@ -136,15 +136,20 @@ impl Cpu {
         cpu.ram[0..16*5].copy_from_slice(&font);
         cpu
     }
-    pub fn exec(&mut self) {
-        let op = self.current;
-        exec(self,op);
-        //println!("{}",&self);
+    pub fn soft_reset(&mut self) {
+            self.stack.clear();
+            self.v.copy_from_slice(&[0;16]);
+            self.pc = 0x200u16;
+            self.i = 0;
+            self.dt = 0;
+            self.st = 0;
+            self.current = Opcode(0,0,0,0);
     }
-    pub fn fetch(&mut self) {
-        self.current = Opcode::read(&self.ram[(self.pc as usize)..])
-            .expect("wrapping memory!");
-        self.pc += 2;
+    pub fn run(&mut self, n: usize) {
+        for _ in 0..n {
+            self.fetch();
+            self.exec();
+        }
     }
     pub fn tick(&mut self) {
         if self.st > 0 {
@@ -160,9 +165,18 @@ impl Cpu {
     pub fn video_ram(&self) -> &[bool] {
         self.video_ram.as_ref()
     }
-
     pub fn keys_pressed(&mut self) -> &mut[bool] {
         self.keys_pressed.as_mut()
+    }
+    fn exec(&mut self) {
+        let op = self.current;
+        exec(self,op);
+        //println!("{}",&self);
+    }
+    fn fetch(&mut self) {
+        self.current = Opcode::read(&self.ram[(self.pc as usize)..])
+            .expect("wrapping memory!");
+        self.pc += 2;
     }
 }
 
