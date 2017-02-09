@@ -190,7 +190,7 @@ instruction_set! {
         }
     },
     SKNE    => 0x4, x , n1, n2 | {
-        if cpu.v[x as usize] == nn(n1,n2) {
+        if cpu.v[x as usize] != nn(n1,n2) {
             cpu.pc += 2;
         }
     },
@@ -274,12 +274,12 @@ instruction_set! {
         }
     },
     SKP   => 0xE, x ,0x9,0xE | {
-        if cpu.keys_pressed[x as usize] {
+        if cpu.keys_pressed[cpu.v[x as usize] as usize] {
             cpu.pc +=2;
         }
     },
     SKNP  => 0xE, x ,0xA,0x1 | {
-        if !cpu.keys_pressed[x as usize] {
+        if !cpu.keys_pressed[cpu.v[x as usize] as usize] {
             cpu.pc +=2;
         }
     },
@@ -319,7 +319,7 @@ instruction_set! {
         }
     },
     READ    => 0xF, x ,0x6,0x5 | {
-        for r in 0..x {
+        for r in 0..(x+1) {
             cpu.v[r as usize] = cpu.ram[(cpu.i as usize)+(r as usize)];
         }
     },
