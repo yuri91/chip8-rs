@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 extern crate rand;
 
 use std::fmt;
@@ -79,7 +81,7 @@ pub struct Cpu {
     keys_pressed: Vec<bool>,
 }
 
-const font : [u8;16*5] = [
+const FONTS : [u8;16*5] = [
       0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
       0x20, 0x60, 0x20, 0x20, 0x70, // 1
       0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -133,7 +135,7 @@ impl Cpu {
     pub fn new() -> Cpu {
         let mut cpu = Cpu::default();
         cpu.pc = 0x200u16;
-        cpu.ram[0..16*5].copy_from_slice(&font);
+        cpu.ram[0..16*5].copy_from_slice(&FONTS);
         cpu
     }
     pub fn soft_reset(&mut self) {
