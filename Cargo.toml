@@ -1,6 +1,6 @@
 [package]
 name = "chip8"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Yuri Iozzelli <y.iozzelli@gmail.com>"]
 description = "A simple CHIP-8 emulator compatible with a no_std environment"
 keywords = ["chip-8", "emulator", "no_std",]
