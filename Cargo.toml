@@ -9,7 +9,11 @@ repository = "https://github.com/yuri91/chip8-rs"
 documentation = "https://docs.rs/chip8"
 license = "MIT"
 
+exclude = [
+    "test_roms/*"
+]
 
 [dev-dependencies]
 sdl2 = "0.27.0"
 rand = "0.4.2"
+
