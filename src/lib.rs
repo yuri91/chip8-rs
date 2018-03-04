@@ -4,7 +4,7 @@
 use core::fmt;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Opcode (u16);
+struct Opcode (u16);
 
 impl Opcode {
     pub fn read(mem: &[u8]) -> Option<Opcode> {
