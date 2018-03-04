@@ -2,7 +2,7 @@
 name = "chip8"
 version = "0.1.0"
 authors = ["Yuri Iozzelli <y.iozzelli@gmail.com>"]
-description = "Asimple CHIP-8 emulator compatible with a no_std environment"
+description = "A simple CHIP-8 emulator compatible with a no_std environment"
 keywords = ["chip-8", "emulator", "no_std",]
 homepage = "https://github.com/yuri91/chip8-rs"
 repository = "https://github.com/yuri91/chip8-rs"
