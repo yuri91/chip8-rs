@@ -1,6 +1,6 @@
 extern crate sdl2;
 extern crate rand;
-extern crate chip8_cpu;
+extern crate chip8;
 
 use sdl2::pixels::Color;
 use sdl2::event::Event;
@@ -17,7 +17,7 @@ use std::time;
 
 use std::collections::HashMap;
 
-use chip8_cpu::{Cpu, Memory};
+use chip8::{Cpu, Memory};
 
 struct SDLFrontend {
     chip8: Cpu,
