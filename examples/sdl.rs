@@ -1,4 +1,6 @@
 extern crate sdl2;
+extern crate rand;
+extern crate chip8_cpu;
 
 use sdl2::pixels::Color;
 use sdl2::event::Event;
@@ -6,8 +8,6 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use sdl2::Sdl;
 use sdl2::render::Renderer;
-
-mod chip8;
 
 use std::fs;
 use std::io::Read;
@@ -17,8 +17,11 @@ use std::time;
 
 use std::collections::HashMap;
 
+use chip8_cpu::{Cpu, Memory};
+
 struct SDLFrontend {
-    chip8: chip8::Cpu,
+    chip8: Cpu,
+    memory: Memory,
     sdl_context: Sdl,
     renderer: Renderer<'static>,
     keymap: HashMap<String,usize>
@@ -54,7 +57,8 @@ impl SDLFrontend {
         keymap.insert("V".to_string(),0xFusize);
 
         SDLFrontend {
-            chip8: chip8::Cpu::new(),
+            chip8: Cpu::new(rand::random::<u8>),
+            memory: Memory::new(),
             sdl_context: sdl_context,
             renderer: window.renderer().build().unwrap(),
             keymap: keymap
@@ -64,7 +68,7 @@ impl SDLFrontend {
         let mut f = fs::File::open(path).expect("file does not exists");
         let mut program = Vec::new();
         f.read_to_end(&mut program).expect("cannot read file");
-        self.chip8.load(program.as_slice());
+        self.memory.load_program(program.as_slice());
     }
     fn update_screen(&mut self) {
 
@@ -77,7 +81,7 @@ impl SDLFrontend {
         self.renderer.set_draw_color(Color::RGB(0, 0, 0));
         for j in 0..h {
             for i in 0..w {
-                if self.chip8.video_ram()[i+64*j] {
+                if self.memory.video[i+64*j] {
                     self.renderer.fill_rect(Rect::new((i*scale) as i32,(j*scale) as i32,scale as u32,scale as u32)).unwrap();
                 }
             }
@@ -93,14 +97,15 @@ impl SDLFrontend {
                 },
                 Event::KeyDown { keycode: Some(k), .. } => {
                     if let Some(p) = self.keymap.get(&k.name()) {
-                        self.chip8.keys_pressed()[*p] = true;
+                        self.memory.keys[*p] = true;
                     } else if k == Keycode::Return {
-                        self.chip8.soft_reset();
+                        self.chip8.reset();
+                        self.memory.reset();
                     }
                 },
                 Event::KeyUp { keycode: Some(k), .. } => {
                     if let Some(p) = self.keymap.get(&k.name()) {
-                        self.chip8.keys_pressed()[*p] = false;
+                        self.memory.keys[*p] = false;
                     }
                 },
                 _ => {}
@@ -116,7 +121,7 @@ impl SDLFrontend {
         let clock = time::SystemTime::now();
         while running {
             let start = clock.elapsed().unwrap();
-            self.chip8.run(inst_per_frame);
+            self.chip8.run(&mut self.memory, inst_per_frame);
             running = self.update_keys();
             self.update_screen();
             self.chip8.tick();
